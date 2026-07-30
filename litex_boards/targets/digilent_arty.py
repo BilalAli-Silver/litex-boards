@@ -247,6 +247,77 @@ def main():
         **parser.soc_argdict
     )
 
+
+    from litex.soc.cores.cpu.vexriscv_smp.core import VexRiscvSMP
+    if isinstance(soc.cpu, VexRiscvSMP) and VexRiscvSMP.privileged_debug:
+        if VexRiscvSMP.jtag_tap:
+            # RISC-V JTAG debug (BSCAN BSCAN driving the CPU's own real TAP) ----------------------------------------------------------
+            import litex_boards.gateware.bscan_jtag_converter
+            from litex_boards.gateware.bscan_jtag_converter import BSCANJTAGTAP
+
+            # bscan_to_jtag is Vivado-encrypted IP; register the .xci so Vivado
+            # runs read_ip/generate_target/synth_ip on it internally.
+            soc.platform.add_ip(
+                os.path.join(os.path.dirname(litex_boards.gateware.bscan_jtag_converter.__file__),
+                            "ip", "bscan_to_jtag", "xci", "bscan_to_jtag.xci"),
+                disable_constraints=False
+            )
+
+            soc.jtag = jtag = BSCANJTAGTAP(chain=4)
+            soc.comb += [
+                soc.cpu.jtag_clk.eq(jtag.tck),
+                soc.cpu.jtag_tms.eq(jtag.tms),
+                soc.cpu.jtag_tdi.eq(jtag.tdi),
+                jtag.tdo.eq(soc.cpu.jtag_tdo),
+            ]
+            print(f"jtag added successfully with jtag tap in vexriscv_smp")
+        else:
+            # RISC-V JTAG debug (BSCAN tunnel) ----------------------------------------------------------
+            from litex.soc.cores.jtag import XilinxJTAG
+            soc.jtag = jtag = XilinxJTAG(XilinxJTAG.get_primitive(soc.platform.device), chain=4)
+            soc.comb += [
+                soc.cpu.jtag_reset.eq(jtag.reset),
+                soc.cpu.jtag_capture.eq(jtag.capture),
+                soc.cpu.jtag_shift.eq(jtag.shift),
+                soc.cpu.jtag_update.eq(jtag.update),
+                soc.cpu.jtag_clk.eq(jtag.tck),
+                soc.cpu.jtag_tdi.eq(jtag.tdi),
+                soc.cpu.jtag_enable.eq(True),
+                jtag.tdo.eq(soc.cpu.jtag_tdo),
+            ]
+            print(f"jtag added successfully without jtag tap")
+
+    from litex.soc.cores.cpu.cva6.core import CVA6
+    if isinstance(soc.cpu, CVA6):
+        # RISC-V JTAG debug (BSCAN BSCAN driving the CPU's own real TAP) ----------------------------------------------------------
+        import litex_boards.gateware.bscan_jtag_converter
+        from litex_boards.gateware.bscan_jtag_converter import BSCANJTAGTAP
+
+        # bscan_to_jtag is Vivado-encrypted IP; register the .xci so Vivado
+        # runs read_ip/generate_target/synth_ip on it internally.
+        soc.platform.add_ip(
+            os.path.join(os.path.dirname(litex_boards.gateware.bscan_jtag_converter.__file__),
+                        "ip", "bscan_to_jtag", "xci", "bscan_to_jtag.xci"),
+            disable_constraints=False
+        )
+
+        # 1. Instantiate the missing signals inside the CPU wrapper
+        soc.cpu.add_jtag(pads=None)
+
+        # 2. Set up the BSCAN converter instance
+        soc.jtag = jtag = BSCANJTAGTAP(chain=4)
+        
+        # 3. Connect the wrapper signals to the BSCAN tap
+        soc.comb += [
+            soc.cpu.jtag_tck.eq(jtag.tck),
+            soc.cpu.jtag_tms.eq(jtag.tms),
+            soc.cpu.jtag_trst.eq(0), 
+            soc.cpu.jtag_tdi.eq(jtag.tdi),
+            jtag.tdo.eq(soc.cpu.jtag_tdo),
+        ]
+        print(f"jtag added successfully with jtag tap in cva6")
+
+
     if args.sdcard_adapter == "numato":
         soc.platform.add_extension(digilent_arty._numato_sdcard_pmod_io)
     else:

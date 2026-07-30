@@ -1,0 +1,93 @@
+{
+  "schema": "xilinx.com:schema:json_instance:1.0",
+  "ip_inst": {
+    "xci_name": "bscan_to_jtag",
+    "component_reference": "xilinx.com:ip:bscan_jtag:1.0",
+    "ip_revision": "3",
+    "gen_directory": "../../../../.gen/sources_1/ip/bscan_to_jtag",
+    "parameters": {
+      "component_parameters": {
+        "enable_tck_bufg": [ { "value": "true", "resolve_type": "user", "format": "bool", "usage": "all" } ],
+        "Component_Name": [ { "value": "bscan_to_jtag", "resolve_type": "user", "usage": "all" } ]
+      },
+      "model_parameters": {
+        "enable_tck_bufg": [ { "value": "1", "resolve_type": "generated", "format": "long", "usage": "all" } ]
+      },
+      "project_parameters": {
+        "ARCHITECTURE": [ { "value": "artix7" } ],
+        "BASE_BOARD_PART": [ { "value": "" } ],
+        "BOARD_CONNECTIONS": [ { "value": "" } ],
+        "DEVICE": [ { "value": "xc7a100t" } ],
+        "PACKAGE": [ { "value": "csg324" } ],
+        "PREFHDL": [ { "value": "VERILOG" } ],
+        "SILICON_REVISION": [ { "value": "" } ],
+        "SIMULATOR_LANGUAGE": [ { "value": "MIXED" } ],
+        "SPEEDGRADE": [ { "value": "-1" } ],
+        "STATIC_POWER": [ { "value": "" } ],
+        "TEMPERATURE_GRADE": [ { "value": "" } ]
+      },
+      "runtime_parameters": {
+        "IPCONTEXT": [ { "value": "IP_Flow" } ],
+        "IPREVISION": [ { "value": "3" } ],
+        "MANAGED": [ { "value": "TRUE" } ],
+        "OUTPUTDIR": [ { "value": "../../../../.gen/sources_1/ip/bscan_to_jtag" } ],
+        "SELECTEDSIMMODEL": [ { "value": "" } ],
+        "SHAREDDIR": [ { "value": "." } ],
+        "SWVERSION": [ { "value": "2024.2" } ],
+        "SYNTHESISFLOW": [ { "value": "OUT_OF_CONTEXT" } ]
+      }
+    },
+    "boundary": {
+      "ports": {
+        "S_BSCAN_bscanid_en": [ { "direction": "in", "driver_value": "0" } ],
+        "S_BSCAN_capture": [ { "direction": "in" } ],
+        "S_BSCAN_drck": [ { "direction": "in" } ],
+        "S_BSCAN_reset": [ { "direction": "in" } ],
+        "S_BSCAN_runtest": [ { "direction": "in" } ],
+        "S_BSCAN_sel": [ { "direction": "in" } ],
+        "S_BSCAN_shift": [ { "direction": "in" } ],
+        "S_BSCAN_tck": [ { "direction": "in" } ],
+        "S_BSCAN_tdi": [ { "direction": "in" } ],
+        "S_BSCAN_tms": [ { "direction": "in" } ],
+        "S_BSCAN_update": [ { "direction": "in" } ],
+        "S_BSCAN_tdo": [ { "direction": "out" } ],
+        "JTAG_TDO": [ { "direction": "in" } ],
+        "JTAG_TDI": [ { "direction": "out" } ],
+        "JTAG_TMS": [ { "direction": "out" } ],
+        "JTAG_TCK": [ { "direction": "out" } ]
+      },
+      "interfaces": {
+        "S_BSCAN": {
+          "vlnv": "xilinx.com:interface:bscan:1.0",
+          "abstraction_type": "xilinx.com:interface:bscan_rtl:1.0",
+          "mode": "slave",
+          "port_maps": {
+            "BSCANID_EN": [ { "physical_name": "S_BSCAN_bscanid_en" } ],
+            "CAPTURE": [ { "physical_name": "S_BSCAN_capture" } ],
+            "DRCK": [ { "physical_name": "S_BSCAN_drck" } ],
+            "RESET": [ { "physical_name": "S_BSCAN_reset" } ],
+            "RUNTEST": [ { "physical_name": "S_BSCAN_runtest" } ],
+            "SEL": [ { "physical_name": "S_BSCAN_sel" } ],
+            "SHIFT": [ { "physical_name": "S_BSCAN_shift" } ],
+            "TCK": [ { "physical_name": "S_BSCAN_tck" } ],
+            "TDI": [ { "physical_name": "S_BSCAN_tdi" } ],
+            "TDO": [ { "physical_name": "S_BSCAN_tdo" } ],
+            "TMS": [ { "physical_name": "S_BSCAN_tms" } ],
+            "UPDATE": [ { "physical_name": "S_BSCAN_update" } ]
+          }
+        },
+        "M_JTAG": {
+          "vlnv": "xilinx.com:interface:jtag:2.0",
+          "abstraction_type": "xilinx.com:interface:jtag_rtl:2.0",
+          "mode": "master",
+          "port_maps": {
+            "TCK": [ { "physical_name": "JTAG_TCK" } ],
+            "TDI": [ { "physical_name": "JTAG_TDI" } ],
+            "TDO": [ { "physical_name": "JTAG_TDO" } ],
+            "TMS": [ { "physical_name": "JTAG_TMS" } ]
+          }
+        }
+      }
+    }
+  }
+}
