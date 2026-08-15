@@ -23,6 +23,7 @@ python3 .github/scripts/generate_board_inventory.py --write
 | `aliexpress_xc7k70t` | aliexpress_xc7k70t | vivado | `90000000.0` | Ethernet, PCIe, Video Terminal, Video Framebuffer, Video Colorbars | included |
 | `alinx_ax7010` | alinx_ax7010 | - | `100000000.0` | - | included |
 | `alinx_ax7020` | alinx_ax7020 | - | `100000000.0` | - | included |
+| `alinx_ax7035` | alinx_ax7035 | - | `50000000.0` | Ethernet, SDCard, SPI Flash, Video Terminal, Video Framebuffer | included |
 | `alinx_ax7203` | alinx_ax7203 | - | `50000000.0` | PCIe, Video Framebuffer | included |
 | `alinx_axau15` | alinx_axau15 | vivado | `125000000.0` | Ethernet, Etherbone, SDCard, PCIe | included |
 | `alinx_axu2cga` | alinx_axu2cga | vivado | `25000000.0` | - | included |
