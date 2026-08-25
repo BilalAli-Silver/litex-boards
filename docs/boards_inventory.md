@@ -97,7 +97,7 @@ python3 .github/scripts/generate_board_inventory.py --write
 | `kosagi_fomu` | kosagi_fomu_pvt | icestorm | `12000000.0` | - | included |
 | `kosagi_netv2` | kosagi_netv2 | vivado | `100000000.0` | Ethernet, SDCard, SPI SDCard, PCIe | included |
 | `krtkl_snickerdoodle` | krtkl_snickerdoodle | vivado | `100000000.0` | - | included |
-| `lambdaconcept_ecpix5` | lambdaconcept_ecpix5 | trellis | `75000000.0` | Ethernet, Etherbone, SDCard, Video Terminal, Video Framebuffer | included |
+| `lambdaconcept_ecpix5` | lambdaconcept_ecpix5 | trellis | `75000000.0` | Ethernet, Etherbone, SDCard, SATA, Video Terminal, Video Framebuffer | included |
 | `lattice_certus_nx_versa` | lattice_certus_nx_versa | radiant | `75000000.0` | SPI Flash | included |
 | `lattice_certuspro_nx_evn` | lattice_certuspro_nx_evn | radiant | `75000000.0` | - | included |
 | `lattice_certuspro_nx_versa` | lattice_certuspro_nx_versa | radiant | `75000000.0` | PCIe | included |
