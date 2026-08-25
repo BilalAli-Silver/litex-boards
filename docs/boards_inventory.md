@@ -131,6 +131,7 @@ python3 .github/scripts/generate_board_inventory.py --write
 | `micronova_mercury2` | micronova_mercury2 | vivado | `50000000.0` | - | included |
 | `microphase_a7_lite` | microphase_a7_lite | vivado | `100000000.0` | Ethernet, SDCard, SPI SDCard, SPI Flash | included |
 | `microsoft_catapult_v3` | microsoft_catapult_v3 | quartus | `100000000.0` | - | included |
+| `microsoft_storey_peak` | microsoft_storey_peak | quartus | `100000000.0` | - | included |
 | `mist` | mist | quartus | `50000000.0` | Video Terminal | included |
 | `mlk_cu07_ku15p` | mlk_cu07_ku15p | vivado | `75000000.0` | SDCard | included |
 | `mlkpai_fs01_dr1v90m` | mlkpai_fs01_dr1v90m | td | `25000000.0` | - | included |
