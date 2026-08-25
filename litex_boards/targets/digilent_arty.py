@@ -12,6 +12,8 @@
 # - DDR3 should be disabled: ex --integrated-main-ram-size=8192
 # - Clk Freq should be lowered: ex --sys-clk-freq=50e6
 
+import os
+
 from migen import *
 
 from litex.gen import *
@@ -250,28 +252,7 @@ def main():
 
     from litex.soc.cores.cpu.vexriscv_smp.core import VexRiscvSMP
     if isinstance(soc.cpu, VexRiscvSMP) and VexRiscvSMP.privileged_debug:
-        if VexRiscvSMP.jtag_tap:
-            # RISC-V JTAG debug (BSCAN BSCAN driving the CPU's own real TAP) ----------------------------------------------------------
-            import litex_boards.gateware.bscan_jtag_converter
-            from litex_boards.gateware.bscan_jtag_converter import BSCANJTAGTAP
-
-            # bscan_to_jtag is Vivado-encrypted IP; register the .xci so Vivado
-            # runs read_ip/generate_target/synth_ip on it internally.
-            soc.platform.add_ip(
-                os.path.join(os.path.dirname(litex_boards.gateware.bscan_jtag_converter.__file__),
-                            "ip", "bscan_to_jtag", "xci", "bscan_to_jtag.xci"),
-                disable_constraints=False
-            )
-
-            soc.jtag = jtag = BSCANJTAGTAP(chain=4)
-            soc.comb += [
-                soc.cpu.jtag_clk.eq(jtag.tck),
-                soc.cpu.jtag_tms.eq(jtag.tms),
-                soc.cpu.jtag_tdi.eq(jtag.tdi),
-                jtag.tdo.eq(soc.cpu.jtag_tdo),
-            ]
-            print(f"jtag added successfully with jtag tap in vexriscv_smp")
-        else:
+        if not VexRiscvSMP.jtag_tap:
             # RISC-V JTAG debug (BSCAN tunnel) ----------------------------------------------------------
             from litex.soc.cores.jtag import XilinxJTAG
             soc.jtag = jtag = XilinxJTAG(XilinxJTAG.get_primitive(soc.platform.device), chain=4)
@@ -285,38 +266,20 @@ def main():
                 soc.cpu.jtag_enable.eq(True),
                 jtag.tdo.eq(soc.cpu.jtag_tdo),
             ]
-            print(f"jtag added successfully without jtag tap")
 
-    from litex.soc.cores.cpu.cva6.core import CVA6
-    if isinstance(soc.cpu, CVA6):
-        # RISC-V JTAG debug (BSCAN BSCAN driving the CPU's own real TAP) ----------------------------------------------------------
-        import litex_boards.gateware.bscan_jtag_converter
-        from litex_boards.gateware.bscan_jtag_converter import BSCANJTAGTAP
-
-        # bscan_to_jtag is Vivado-encrypted IP; register the .xci so Vivado
-        # runs read_ip/generate_target/synth_ip on it internally.
-        soc.platform.add_ip(
-            os.path.join(os.path.dirname(litex_boards.gateware.bscan_jtag_converter.__file__),
-                        "ip", "bscan_to_jtag", "xci", "bscan_to_jtag.xci"),
-            disable_constraints=False
-        )
-
-        # 1. Instantiate the missing signals inside the CPU wrapper
-        soc.cpu.add_jtag(pads=None)
-
-        # 2. Set up the BSCAN converter instance
-        soc.jtag = jtag = BSCANJTAGTAP(chain=4)
-        
-        # 3. Connect the wrapper signals to the BSCAN tap
+    from litex.soc.cores.cpu.veer_eh1.core import VeeREH1
+    if isinstance(soc.cpu, VeeREH1) and soc.cpu.dmi_enable:
+        from litex_boards.gateware.bscan_dmi import BSCANVeeRDMI
+        soc.dmi_tap = BSCANVeeRDMI(soc.platform, rst=ResetSignal("sys") | soc.cpu.reset)
         soc.comb += [
-            soc.cpu.jtag_tck.eq(jtag.tck),
-            soc.cpu.jtag_tms.eq(jtag.tms),
-            soc.cpu.jtag_trst.eq(0), 
-            soc.cpu.jtag_tdi.eq(jtag.tdi),
-            jtag.tdo.eq(soc.cpu.jtag_tdo),
+            soc.cpu.dmi_reg_en.eq(soc.dmi_tap.dmi_reg_en),
+            soc.cpu.dmi_reg_addr.eq(soc.dmi_tap.dmi_reg_addr),
+            soc.cpu.dmi_reg_wr_en.eq(soc.dmi_tap.dmi_reg_wr_en),
+            soc.cpu.dmi_reg_wdata.eq(soc.dmi_tap.dmi_reg_wdata),
+            soc.dmi_tap.dmi_reg_rdata.eq(soc.cpu.dmi_reg_rdata),
+            soc.cpu.dmi_hard_reset.eq(soc.dmi_tap.dmi_hard_reset),
         ]
-        print(f"jtag added successfully with jtag tap in cva6")
-
+        print("dmi added successfully with bscan tap in veer_eh1")
 
     if args.sdcard_adapter == "numato":
         soc.platform.add_extension(digilent_arty._numato_sdcard_pmod_io)
