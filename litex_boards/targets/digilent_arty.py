@@ -12,6 +12,8 @@
 # - DDR3 should be disabled: ex --integrated-main-ram-size=8192
 # - Clk Freq should be lowered: ex --sys-clk-freq=50e6
 
+import os
+
 from migen import *
 
 from litex.gen import *
@@ -246,6 +248,38 @@ def main():
         with_can       = args.with_can,
         **parser.soc_argdict
     )
+
+
+    from litex.soc.cores.cpu.vexriscv_smp.core import VexRiscvSMP
+    if isinstance(soc.cpu, VexRiscvSMP) and VexRiscvSMP.privileged_debug:
+        if not VexRiscvSMP.jtag_tap:
+            # RISC-V JTAG debug (BSCAN tunnel) ----------------------------------------------------------
+            from litex.soc.cores.jtag import XilinxJTAG
+            soc.jtag = jtag = XilinxJTAG(XilinxJTAG.get_primitive(soc.platform.device), chain=4)
+            soc.comb += [
+                soc.cpu.jtag_reset.eq(jtag.reset),
+                soc.cpu.jtag_capture.eq(jtag.capture),
+                soc.cpu.jtag_shift.eq(jtag.shift),
+                soc.cpu.jtag_update.eq(jtag.update),
+                soc.cpu.jtag_clk.eq(jtag.tck),
+                soc.cpu.jtag_tdi.eq(jtag.tdi),
+                soc.cpu.jtag_enable.eq(True),
+                jtag.tdo.eq(soc.cpu.jtag_tdo),
+            ]
+
+    from litex.soc.cores.cpu.veer_eh1.core import VeeREH1
+    if isinstance(soc.cpu, VeeREH1) and soc.cpu.dmi_enable:
+        from litex_boards.gateware.bscan_dmi import BSCANVeeRDMI
+        soc.dmi_tap = BSCANVeeRDMI(soc.platform, rst=ResetSignal("sys") | soc.cpu.reset)
+        soc.comb += [
+            soc.cpu.dmi_reg_en.eq(soc.dmi_tap.dmi_reg_en),
+            soc.cpu.dmi_reg_addr.eq(soc.dmi_tap.dmi_reg_addr),
+            soc.cpu.dmi_reg_wr_en.eq(soc.dmi_tap.dmi_reg_wr_en),
+            soc.cpu.dmi_reg_wdata.eq(soc.dmi_tap.dmi_reg_wdata),
+            soc.dmi_tap.dmi_reg_rdata.eq(soc.cpu.dmi_reg_rdata),
+            soc.cpu.dmi_hard_reset.eq(soc.dmi_tap.dmi_hard_reset),
+        ]
+        print("dmi added successfully with bscan tap in veer_eh1")
 
     if args.sdcard_adapter == "numato":
         soc.platform.add_extension(digilent_arty._numato_sdcard_pmod_io)
