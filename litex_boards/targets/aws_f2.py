@@ -8,14 +8,23 @@
 
 # AWS EC2 F2 (VU47P) LiteX target.
 #
-# F2 does not load a Vivado .bit file. The SoC is Custom Logic behind the AWS Shell:
+# F2 does not load a Vivado .bit file. The SoC is Custom Logic behind the AWS Shell.
+# OCL AXI-Lite (AppPF BAR0) is a master on the LiteX bus so the host can poke CSRs
+# (crossover UART) without board TX/RX pins.
+#
+# --build clones aws-fpga next to litex-boards (same commit as this support),
+# sources hdk_setup.sh, emits RTL, packages gateware/cl_litex, and runs the HDK
+# Vivado flow to the post-route DCP / Developer_CL.tar:
+#   python3 -m litex_boards.targets.aws_f2 --build
+# Local / no Vivado: still clone aws-fpga and package gateware/cl_litex,
+# but skip hdk_setup.sh and the DCP build:
 #   python3 -m litex_boards.targets.aws_f2 --build --no-compile-gateware
-# Copy build/aws_f2/gateware/*.v and cl_litex.sv into an AWS HDK CL, build an AFI, then:
+# --load sources sdk_setup.sh then programs the slot:
 #   python3 -m litex_boards.targets.aws_f2 --load --agfi agfi-xxxxxxxxxxxxxxxxx
 #
 # Host smoke tests after AFI load:
 #   sudo fpga-get-virtual-led -S 0
-#   Peek CSRs through AppPF BAR0 using build/aws_f2/csr.csv (ctrl_scratch, identifier).
+#   Peek CSRs through AppPF BAR0 using build/aws_f2/csr.csv (ctrl_scratch, uart).
 
 import os
 
@@ -92,6 +101,9 @@ def main():
     from litex.build.parser import LiteXArgumentParser
     parser = LiteXArgumentParser(platform=aws_f2.Platform, description="LiteX SoC on AWS EC2 F2 (VU47P).")
     parser.add_target_argument("--sys-clk-freq", default=250e6, type=float, help="System clock frequency (must match clk_main_a0 unless a PLL is used).")
+    parser.add_target_argument("--aws-fpga-dir", default=None,              help="AWS FPGA HDK checkout (default: ../aws-fpga next to litex-boards).")
+    parser.add_target_argument("--skip-hdk-setup", action="store_true",     help="Skip sourcing hdk_setup.sh before --build.")
+    parser.add_target_argument("--skip-sdk-setup", action="store_true",     help="Skip sourcing sdk_setup.sh before --load.")
     parser.add_target_argument("--agfi",         default=None,              help="Amazon FPGA Image ID to load (agfi-...).")
     parser.add_target_argument("--slot",         default=0,     type=int,   help="FPGA slot number.")
     args = parser.parse_args()
@@ -102,21 +114,37 @@ def main():
     )
     builder = Builder(soc, **parser.builder_argdict)
     if args.build:
-        # F2 cannot use a standalone Vivado bitstream; emit RTL for the AWS HDK CL flow.
+        # LiteX RTL/BIOS first so clone/git stdout is not mixed into SoC INFO logs.
         toolchain_argdict = dict(parser.toolchain_argdict)
         toolchain_argdict["run"] = False
         builder.build(**toolchain_argdict)
-        aws_f2.write_cl_wrapper(
-            os.path.join(builder.gateware_dir, "cl_litex.sv"),
+        aws_fpga_dir = aws_f2.ensure_aws_fpga(args.aws_fpga_dir)
+        # --no-compile-gateware still clones HDK and writes cl_litex; only skips Vivado.
+        if builder.compile_gateware and not args.skip_hdk_setup:
+            aws_f2.run_hdk_setup(aws_fpga_dir)
+        extra_sources = [source[0] for source in soc.platform.sources]
+        cl_dir = aws_f2.create_hdk_cl(
+            aws_fpga_dir,
+            builder.gateware_dir,
             soc_name=soc.platform.name,
+            extra_sources=extra_sources,
         )
-        print("Generated F2 Custom Logic wrapper: {}".format(
-            os.path.join(builder.gateware_dir, "cl_litex.sv")))
-        print("Build an AFI with the AWS HDK, then load it with --load --agfi agfi-...")
+        print("Generated AWS HDK CL: {}".format(cl_dir))
+        print("  design/{}.sv instantiates {} on OCL AXI-Lite.".format("cl_litex", soc.platform.name))
+        if builder.compile_gateware:
+            checkpoints = aws_f2.build_hdk_dcp(cl_dir)
+            print("Post-route DCP / tarball: {}".format(checkpoints))
+            print("Submit the Developer_CL.tar to AWS to get an AGFI, then --load --agfi agfi-...")
+        else:
+            print("Skipped HDK DCP (--no-compile-gateware). Later: {}".format(
+                os.path.join(cl_dir, "create_afi.sh")))
 
     if args.load:
         if not args.agfi:
             raise SystemExit("AWS F2 loads an AFI, not a .bit file. Pass --agfi agfi-...")
+        aws_fpga_dir = aws_f2.ensure_aws_fpga(args.aws_fpga_dir)
+        if not args.skip_sdk_setup:
+            aws_f2.run_sdk_setup(aws_fpga_dir)
         prog = soc.platform.create_programmer(slot=args.slot)
         prog.load_bitstream(args.agfi)
 
